@@ -61,7 +61,7 @@ export default function TvShowForm({
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-zinc-200">Title</label>
+        <label className="block text-sm font-medium text-zinc-200">Título</label>
         <input
           type="text"
           value={form.title}
@@ -76,7 +76,7 @@ export default function TvShowForm({
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-zinc-200">
-          Description
+          Descrição
         </label>
         <textarea
           value={form.description}
@@ -91,7 +91,7 @@ export default function TvShowForm({
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-zinc-200">
-          Recommended Age
+          Idade recomendada
         </label>
         <input
           type="number"

@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import SeasonForm from "../components/seasons/SeasonForm";
-import {
-  createSeason,
-  deleteSeason,
-  getSeasonsList,
-  updateSeason,
-} from "../api/seasons";
+import EmptyState from "../components/ui/EmptyState";
+import FeedbackAlert from "../components/ui/FeedbackAlert";
+import PageHeader from "../components/ui/PageHeader";
+import SearchCard from "../components/ui/SearchCard";
+import StatCard from "../components/ui/StatCard";
+import { createSeason, deleteSeason, getSeasonsList, updateSeason } from "../api/seasons";
 import { getTvShowsList } from "../api/tvShows";
+import { formatDateTime } from "../lib/format";
 import type { CreateSeasonInput, Season, TvShow } from "../types/api";
 
 function getTvShowKey(value: Season["tvShow"]): string {
@@ -46,18 +47,21 @@ function SeasonCard({
   isDeleting: boolean;
 }) {
   return (
-    <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-semibold">
-            {tvShowLabel} — Season {season.number}
-          </h3>
-          <p className="mt-2 text-sm text-zinc-400">Ano: {season.year}</p>
+    <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-sm">
+      <div>
+        <h3 className="text-lg font-semibold text-white">
+          {tvShowLabel} — Season {season.number}
+        </h3>
 
-          <div className="mt-4 space-y-1 text-xs text-zinc-500">
-            <p>Key: {season["@key"] ?? "N/A"}</p>
-            <p>Última atualização: {season["@lastUpdated"] ?? "N/A"}</p>
-          </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-200">
+            Ano {season.year}
+          </span>
+        </div>
+
+        <div className="mt-4 space-y-1 text-xs text-zinc-500">
+          <p>Key: {season["@key"] ?? "N/A"}</p>
+          <p>Última atualização: {formatDateTime(season["@lastUpdated"])}</p>
         </div>
       </div>
 
@@ -84,7 +88,9 @@ function SeasonCard({
 export default function SeasonsPage() {
   const queryClient = useQueryClient();
   const [feedback, setFeedback] = useState("");
+  const [feedbackType, setFeedbackType] = useState<"success" | "error" | "info">("info");
   const [editingSeason, setEditingSeason] = useState<Season | null>(null);
+  const [search, setSearch] = useState("");
 
   const seasonsQuery = useQuery({
     queryKey: ["seasons"],
@@ -99,30 +105,29 @@ export default function SeasonsPage() {
   const createMutation = useMutation({
     mutationFn: (values: CreateSeasonInput) => createSeason(values),
     onSuccess: async () => {
+      setFeedbackType("success");
       setFeedback("Season criada com sucesso.");
       await queryClient.invalidateQueries({ queryKey: ["seasons"] });
     },
     onError: (error) => {
       console.error(error);
+      setFeedbackType("error");
       setFeedback("Erro ao criar season. Veja o console e a aba Network.");
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({
-      key,
-      values,
-    }: {
-      key: string;
-      values: CreateSeasonInput;
-    }) => updateSeason(key, values),
+    mutationFn: ({ key, values }: { key: string; values: CreateSeasonInput }) =>
+      updateSeason(key, values),
     onSuccess: async () => {
+      setFeedbackType("success");
       setFeedback("Season atualizada com sucesso.");
       setEditingSeason(null);
       await queryClient.invalidateQueries({ queryKey: ["seasons"] });
     },
     onError: (error) => {
       console.error(error);
+      setFeedbackType("error");
       setFeedback("Erro ao atualizar season. Veja o console e a aba Network.");
     },
   });
@@ -130,12 +135,14 @@ export default function SeasonsPage() {
   const deleteMutation = useMutation({
     mutationFn: (key: string) => deleteSeason(key),
     onSuccess: async () => {
+      setFeedbackType("success");
       setFeedback("Season excluída com sucesso.");
       setEditingSeason(null);
       await queryClient.invalidateQueries({ queryKey: ["seasons"] });
     },
     onError: (error) => {
       console.error(error);
+      setFeedbackType("error");
       setFeedback("Erro ao excluir season. Veja o console e a aba Network.");
     },
   });
@@ -147,6 +154,7 @@ export default function SeasonsPage() {
 
   async function handleUpdate(values: CreateSeasonInput) {
     if (!editingSeason?.["@key"]) {
+      setFeedbackType("error");
       setFeedback("Não foi possível editar: @key ausente.");
       return;
     }
@@ -160,6 +168,7 @@ export default function SeasonsPage() {
 
   async function handleDelete(season: Season) {
     if (!season["@key"]) {
+      setFeedbackType("error");
       setFeedback("Não foi possível excluir: @key ausente.");
       return;
     }
@@ -177,15 +186,29 @@ export default function SeasonsPage() {
   const seasons = seasonsQuery.data?.items ?? [];
   const tvShows = tvShowsQuery.data?.items ?? [];
 
-  const sortedSeasons = useMemo(() => {
-    return [...seasons].sort((a, b) => {
-      const aLabel = getTvShowLabel(a.tvShow, tvShows);
-      const bLabel = getTvShowLabel(b.tvShow, tvShows);
+  const filteredSeasons = useMemo(() => {
+    const term = search.trim().toLowerCase();
 
-      if (aLabel !== bLabel) return aLabel.localeCompare(bLabel);
-      return a.number - b.number;
-    });
-  }, [seasons, tvShows]);
+    return [...seasons]
+      .sort((a, b) => {
+        const aLabel = getTvShowLabel(a.tvShow, tvShows);
+        const bLabel = getTvShowLabel(b.tvShow, tvShows);
+
+        if (aLabel !== bLabel) return aLabel.localeCompare(bLabel);
+        return a.number - b.number;
+      })
+      .filter((season) => {
+        if (!term) return true;
+
+        const tvShowLabel = getTvShowLabel(season.tvShow, tvShows).toLowerCase();
+
+        return (
+          tvShowLabel.includes(term) ||
+          String(season.number).includes(term) ||
+          String(season.year).includes(term)
+        );
+      });
+  }, [seasons, tvShows, search]);
 
   if (seasonsQuery.isLoading || tvShowsQuery.isLoading) {
     return <div className="text-zinc-300">Carregando seasons...</div>;
@@ -201,52 +224,55 @@ export default function SeasonsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold">Seasons</h2>
-          <p className="mt-2 text-zinc-400">
-            CRUD de temporadas associado aos TV Shows.
-          </p>
-        </div>
+      <PageHeader
+        title="Seasons"
+        description="Gerencie temporadas vinculadas aos TV Shows já cadastrados."
+        action={
+          <button
+            onClick={() => {
+              seasonsQuery.refetch();
+              tvShowsQuery.refetch();
+            }}
+            className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+          >
+            Atualizar
+          </button>
+        }
+      />
 
-        <button
-          onClick={() => {
-            seasonsQuery.refetch();
-            tvShowsQuery.refetch();
-          }}
-          className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-        >
-          Atualizar
-        </button>
-      </header>
+      {feedback ? <FeedbackAlert message={feedback} variant={feedbackType} /> : null}
 
-      {feedback ? (
-        <section className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4 text-sm text-zinc-100">
-          {feedback}
-        </section>
-      ) : null}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <StatCard label="Total de Seasons" value={seasons.length} helperText="Quantidade total cadastrada." />
+        <StatCard label="Resultados filtrados" value={filteredSeasons.length} helperText="Itens visíveis com base na busca." />
+        <SearchCard
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por série, número ou ano"
+        />
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <section className="space-y-4">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-            <p className="text-sm text-zinc-300">
-              Total encontrado:{" "}
-              <span className="font-semibold">{sortedSeasons.length}</span>
-            </p>
-          </div>
-
-          <section className="grid gap-4">
-            {sortedSeasons.map((season) => (
-              <SeasonCard
-                key={season["@key"] ?? `${getTvShowKey(season.tvShow)}-${season.number}`}
-                season={season}
-                tvShowLabel={getTvShowLabel(season.tvShow, tvShows)}
-                onEdit={setEditingSeason}
-                onDelete={handleDelete}
-                isDeleting={deleteMutation.isPending}
-              />
-            ))}
-          </section>
+          {filteredSeasons.length > 0 ? (
+            <section className="grid gap-4">
+              {filteredSeasons.map((season) => (
+                <SeasonCard
+                  key={season["@key"] ?? `${getTvShowKey(season.tvShow)}-${season.number}`}
+                  season={season}
+                  tvShowLabel={getTvShowLabel(season.tvShow, tvShows)}
+                  onEdit={setEditingSeason}
+                  onDelete={handleDelete}
+                  isDeleting={deleteMutation.isPending}
+                />
+              ))}
+            </section>
+          ) : (
+            <EmptyState
+              title="Nenhuma season encontrada"
+              description="Ajuste a busca ou crie uma nova season no formulário ao lado."
+            />
+          )}
         </section>
 
         <section className="space-y-6">

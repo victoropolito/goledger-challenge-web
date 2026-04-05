@@ -1,20 +1,16 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import EpisodeForm from "../components/episodes/EpisodeForm";
-import {
-  createEpisode,
-  deleteEpisode,
-  getEpisodesList,
-  updateEpisode,
-} from "../api/episodes";
+import EmptyState from "../components/ui/EmptyState";
+import FeedbackAlert from "../components/ui/FeedbackAlert";
+import PageHeader from "../components/ui/PageHeader";
+import SearchCard from "../components/ui/SearchCard";
+import StatCard from "../components/ui/StatCard";
+import { createEpisode, deleteEpisode, getEpisodesList, updateEpisode } from "../api/episodes";
 import { getSeasonsList } from "../api/seasons";
 import { getTvShowsList } from "../api/tvShows";
-import type {
-  CreateEpisodeInput,
-  Episode,
-  Season,
-  TvShow,
-} from "../types/api";
+import { formatDateTime } from "../lib/format";
+import type { CreateEpisodeInput, Episode, Season, TvShow } from "../types/api";
 
 function getSeasonKey(value: Episode["season"] | Season["tvShow"]): string {
   if (!value) return "";
@@ -51,13 +47,6 @@ function getEpisodeSeasonLabel(
   return getSeasonLabel(season, tvShows);
 }
 
-function formatDate(value: string) {
-  if (!value) return "N/A";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
-}
-
 function EpisodeCard({
   episode,
   seasonLabel,
@@ -72,21 +61,27 @@ function EpisodeCard({
   isDeleting: boolean;
 }) {
   return (
-    <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-semibold">
-            Ep. {episode.episodeNumber} — {episode.title}
-          </h3>
-          <p className="mt-2 text-sm text-zinc-400">{seasonLabel}</p>
-          <p className="mt-2 text-sm text-zinc-400">{episode.description}</p>
+    <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-sm">
+      <div>
+        <h3 className="text-lg font-semibold text-white">
+          Ep. {episode.episodeNumber} — {episode.title}
+        </h3>
 
-          <div className="mt-4 space-y-1 text-xs text-zinc-500">
-            <p>Release: {formatDate(episode.releaseDate)}</p>
-            <p>Rating: {episode.rating ?? "N/A"}</p>
-            <p>Key: {episode["@key"] ?? "N/A"}</p>
-            <p>Última atualização: {episode["@lastUpdated"] ?? "N/A"}</p>
-          </div>
+        <p className="mt-2 text-sm text-zinc-400">{seasonLabel}</p>
+        <p className="mt-2 text-sm leading-6 text-zinc-400">{episode.description}</p>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-200">
+            Rating: {episode.rating ?? "N/A"}
+          </span>
+          <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-200">
+            Lançamento: {formatDateTime(episode.releaseDate)}
+          </span>
+        </div>
+
+        <div className="mt-4 space-y-1 text-xs text-zinc-500">
+          <p>Key: {episode["@key"] ?? "N/A"}</p>
+          <p>Última atualização: {formatDateTime(episode["@lastUpdated"])}</p>
         </div>
       </div>
 
@@ -113,7 +108,9 @@ function EpisodeCard({
 export default function EpisodesPage() {
   const queryClient = useQueryClient();
   const [feedback, setFeedback] = useState("");
+  const [feedbackType, setFeedbackType] = useState<"success" | "error" | "info">("info");
   const [editingEpisode, setEditingEpisode] = useState<Episode | null>(null);
+  const [search, setSearch] = useState("");
 
   const episodesQuery = useQuery({
     queryKey: ["episodes"],
@@ -133,30 +130,29 @@ export default function EpisodesPage() {
   const createMutation = useMutation({
     mutationFn: (values: CreateEpisodeInput) => createEpisode(values),
     onSuccess: async () => {
+      setFeedbackType("success");
       setFeedback("Episode criado com sucesso.");
       await queryClient.invalidateQueries({ queryKey: ["episodes"] });
     },
     onError: (error) => {
       console.error(error);
+      setFeedbackType("error");
       setFeedback("Erro ao criar episode. Veja o console e a aba Network.");
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({
-      key,
-      values,
-    }: {
-      key: string;
-      values: CreateEpisodeInput;
-    }) => updateEpisode(key, values),
+    mutationFn: ({ key, values }: { key: string; values: CreateEpisodeInput }) =>
+      updateEpisode(key, values),
     onSuccess: async () => {
+      setFeedbackType("success");
       setFeedback("Episode atualizado com sucesso.");
       setEditingEpisode(null);
       await queryClient.invalidateQueries({ queryKey: ["episodes"] });
     },
     onError: (error) => {
       console.error(error);
+      setFeedbackType("error");
       setFeedback("Erro ao atualizar episode. Veja o console e a aba Network.");
     },
   });
@@ -164,12 +160,14 @@ export default function EpisodesPage() {
   const deleteMutation = useMutation({
     mutationFn: (key: string) => deleteEpisode(key),
     onSuccess: async () => {
+      setFeedbackType("success");
       setFeedback("Episode excluído com sucesso.");
       setEditingEpisode(null);
       await queryClient.invalidateQueries({ queryKey: ["episodes"] });
     },
     onError: (error) => {
       console.error(error);
+      setFeedbackType("error");
       setFeedback("Erro ao excluir episode. Veja o console e a aba Network.");
     },
   });
@@ -181,6 +179,7 @@ export default function EpisodesPage() {
 
   async function handleUpdate(values: CreateEpisodeInput) {
     if (!editingEpisode?.["@key"]) {
+      setFeedbackType("error");
       setFeedback("Não foi possível editar: @key ausente.");
       return;
     }
@@ -194,6 +193,7 @@ export default function EpisodesPage() {
 
   async function handleDelete(episode: Episode) {
     if (!episode["@key"]) {
+      setFeedbackType("error");
       setFeedback("Não foi possível excluir: @key ausente.");
       return;
     }
@@ -212,32 +212,39 @@ export default function EpisodesPage() {
   const seasons = seasonsQuery.data?.items ?? [];
   const tvShows = tvShowsQuery.data?.items ?? [];
 
-  const sortedEpisodes = useMemo(() => {
-    return [...episodes].sort((a, b) => {
-      const seasonALabel = getEpisodeSeasonLabel(a, seasons, tvShows);
-      const seasonBLabel = getEpisodeSeasonLabel(b, seasons, tvShows);
+  const filteredEpisodes = useMemo(() => {
+    const term = search.trim().toLowerCase();
 
-      if (seasonALabel !== seasonBLabel) {
-        return seasonALabel.localeCompare(seasonBLabel);
-      }
+    return [...episodes]
+      .sort((a, b) => {
+        const seasonALabel = getEpisodeSeasonLabel(a, seasons, tvShows);
+        const seasonBLabel = getEpisodeSeasonLabel(b, seasons, tvShows);
 
-      return a.episodeNumber - b.episodeNumber;
-    });
-  }, [episodes, seasons, tvShows]);
+        if (seasonALabel !== seasonBLabel) {
+          return seasonALabel.localeCompare(seasonBLabel);
+        }
 
-  if (
-    episodesQuery.isLoading ||
-    seasonsQuery.isLoading ||
-    tvShowsQuery.isLoading
-  ) {
+        return a.episodeNumber - b.episodeNumber;
+      })
+      .filter((episode) => {
+        if (!term) return true;
+
+        const seasonLabel = getEpisodeSeasonLabel(episode, seasons, tvShows).toLowerCase();
+
+        return (
+          episode.title.toLowerCase().includes(term) ||
+          episode.description.toLowerCase().includes(term) ||
+          seasonLabel.includes(term) ||
+          String(episode.episodeNumber).includes(term)
+        );
+      });
+  }, [episodes, seasons, tvShows, search]);
+
+  if (episodesQuery.isLoading || seasonsQuery.isLoading || tvShowsQuery.isLoading) {
     return <div className="text-zinc-300">Carregando episodes...</div>;
   }
 
-  if (
-    episodesQuery.isError ||
-    seasonsQuery.isError ||
-    tvShowsQuery.isError
-  ) {
+  if (episodesQuery.isError || seasonsQuery.isError || tvShowsQuery.isError) {
     return (
       <div className="text-red-400">
         Erro ao carregar episodes, seasons ou tv shows. Verifique console e network.
@@ -248,65 +255,70 @@ export default function EpisodesPage() {
   if (seasons.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-3xl font-bold">Episodes</h2>
-        <div className="rounded-2xl border border-amber-700/40 bg-amber-950/20 p-5">
-          <p className="text-amber-200 font-semibold">
-            Você precisa ter ao menos uma season cadastrada antes de criar episodes.
-          </p>
-        </div>
+        <PageHeader
+          title="Episodes"
+          description="Gerencie episódios vinculados às seasons cadastradas."
+        />
+        <EmptyState
+          title="Nenhuma season cadastrada"
+          description="Cadastre ao menos uma season antes de criar episódios."
+        />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold">Episodes</h2>
-          <p className="mt-2 text-zinc-400">
-            CRUD de episódios associado às seasons.
-          </p>
-        </div>
+      <PageHeader
+        title="Episodes"
+        description="Gerencie episódios vinculados às seasons cadastradas."
+        action={
+          <button
+            onClick={() => {
+              episodesQuery.refetch();
+              seasonsQuery.refetch();
+              tvShowsQuery.refetch();
+            }}
+            className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+          >
+            Atualizar
+          </button>
+        }
+      />
 
-        <button
-          onClick={() => {
-            episodesQuery.refetch();
-            seasonsQuery.refetch();
-            tvShowsQuery.refetch();
-          }}
-          className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-        >
-          Atualizar
-        </button>
-      </header>
+      {feedback ? <FeedbackAlert message={feedback} variant={feedbackType} /> : null}
 
-      {feedback ? (
-        <section className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4 text-sm text-zinc-100">
-          {feedback}
-        </section>
-      ) : null}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <StatCard label="Total de Episodes" value={episodes.length} helperText="Quantidade total cadastrada." />
+        <StatCard label="Resultados filtrados" value={filteredEpisodes.length} helperText="Itens visíveis com base na busca." />
+        <SearchCard
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por episódio, season ou descrição"
+        />
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <section className="space-y-4">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-            <p className="text-sm text-zinc-300">
-              Total encontrado:{" "}
-              <span className="font-semibold">{sortedEpisodes.length}</span>
-            </p>
-          </div>
-
-          <section className="grid gap-4">
-            {sortedEpisodes.map((episode) => (
-              <EpisodeCard
-                key={episode["@key"] ?? `${getSeasonKey(episode.season)}-${episode.episodeNumber}`}
-                episode={episode}
-                seasonLabel={getEpisodeSeasonLabel(episode, seasons, tvShows)}
-                onEdit={setEditingEpisode}
-                onDelete={handleDelete}
-                isDeleting={deleteMutation.isPending}
-              />
-            ))}
-          </section>
+          {filteredEpisodes.length > 0 ? (
+            <section className="grid gap-4">
+              {filteredEpisodes.map((episode) => (
+                <EpisodeCard
+                  key={episode["@key"] ?? `${getSeasonKey(episode.season)}-${episode.episodeNumber}`}
+                  episode={episode}
+                  seasonLabel={getEpisodeSeasonLabel(episode, seasons, tvShows)}
+                  onEdit={setEditingEpisode}
+                  onDelete={handleDelete}
+                  isDeleting={deleteMutation.isPending}
+                />
+              ))}
+            </section>
+          ) : (
+            <EmptyState
+              title="Nenhum episódio encontrado"
+              description="Ajuste a busca ou crie um novo episódio no formulário ao lado."
+            />
+          )}
         </section>
 
         <section className="space-y-6">
