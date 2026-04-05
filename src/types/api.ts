@@ -31,6 +31,11 @@ export type TvShow = {
   description: string;
   recommendedAge: number;
   "@assetType"?: "tvShows";
+  "@key"?: string;
+  "@lastTouchBy"?: string;
+  "@lastTx"?: string;
+  "@lastTxID"?: string;
+  "@lastUpdated"?: string;
   [key: string]: unknown;
 };
 

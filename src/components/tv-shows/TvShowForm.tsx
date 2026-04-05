@@ -1,9 +1,14 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import type { CreateTvShowInput } from "../../types/api";
 
 type TvShowFormProps = {
+  initialValues?: CreateTvShowInput;
   onSubmit?: (values: CreateTvShowInput) => Promise<void> | void;
+  onCancel?: () => void;
   isSubmitting?: boolean;
+  submitLabel?: string;
+  title?: string;
+  descriptionText?: string;
 };
 
 const initialState: CreateTvShowInput = {
@@ -13,10 +18,19 @@ const initialState: CreateTvShowInput = {
 };
 
 export default function TvShowForm({
+  initialValues,
   onSubmit,
+  onCancel,
   isSubmitting = false,
+  submitLabel = "Salvar TV Show",
+  title = "Criar TV Show",
+  descriptionText = "Preencha os campos obrigatórios do schema de tvShows.",
 }: TvShowFormProps) {
-  const [form, setForm] = useState<CreateTvShowInput>(initialState);
+  const [form, setForm] = useState<CreateTvShowInput>(initialValues ?? initialState);
+
+  useEffect(() => {
+    setForm(initialValues ?? initialState);
+  }, [initialValues]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,7 +45,9 @@ export default function TvShowForm({
       recommendedAge: Number(form.recommendedAge),
     });
 
-    setForm(initialState);
+    if (!initialValues) {
+      setForm(initialState);
+    }
   }
 
   return (
@@ -40,16 +56,12 @@ export default function TvShowForm({
       className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 space-y-5"
     >
       <div>
-        <h3 className="text-xl font-semibold">Criar TV Show</h3>
-        <p className="mt-1 text-sm text-zinc-400">
-          Preencha os campos obrigatórios do schema de tvShows.
-        </p>
+        <h3 className="text-xl font-semibold">{title}</h3>
+        <p className="mt-1 text-sm text-zinc-400">{descriptionText}</p>
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-zinc-200">
-          Title
-        </label>
+        <label className="block text-sm font-medium text-zinc-200">Title</label>
         <input
           type="text"
           value={form.title}
@@ -96,13 +108,26 @@ export default function TvShowForm({
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {isSubmitting ? "Salvando..." : "Salvar TV Show"}
-      </button>
+      <div className="flex gap-3">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSubmitting ? "Salvando..." : submitLabel}
+        </button>
+
+        {onCancel ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isSubmitting}
+            className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+        ) : null}
+      </div>
     </form>
   );
 }

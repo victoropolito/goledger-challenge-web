@@ -9,7 +9,6 @@ function normalizeAssetArray<T>(data: unknown): T[] {
 
   if (data && typeof data === "object") {
     const obj = data as Record<string, unknown>;
-
     const candidateKeys = ["results", "result", "data", "items", "assets"];
 
     for (const key of candidateKeys) {
@@ -51,19 +50,45 @@ export async function createTvShow(input: CreateTvShowInput): Promise<TvShow> {
 
   const { data } = await api.post("/api/invoke/createAsset", payload);
 
-  if (Array.isArray(data) && data.length > 0) {
-    return data[0] as TvShow;
+  const result = unwrapApiResult<unknown>(data);
+
+  if (Array.isArray(result) && result.length > 0) {
+    return result[0] as TvShow;
   }
 
-  if (data && typeof data === "object" && "result" in (data as Record<string, unknown>)) {
-    const result = (data as { result: unknown }).result;
+  return result as TvShow;
+}
 
-    if (Array.isArray(result) && result.length > 0) {
-      return result[0] as TvShow;
-    }
+export async function updateTvShow(
+  key: string,
+  input: CreateTvShowInput
+): Promise<TvShow> {
+  const payload = {
+    update: {
+      "@assetType": "tvShows",
+      "@key": key,
+      ...input,
+    },
+  };
 
-    return result as TvShow;
+  const { data } = await api.put("/api/invoke/updateAsset", payload);
+
+  const result = unwrapApiResult<unknown>(data);
+
+  if (Array.isArray(result) && result.length > 0) {
+    return result[0] as TvShow;
   }
 
-  return data as TvShow;
+  return result as TvShow;
+}
+
+export async function deleteTvShow(key: string): Promise<void> {
+  await api.delete("/api/invoke/deleteAsset", {
+    data: {
+      key: {
+        "@assetType": "tvShows",
+        "@key": key,
+      },
+    },
+  });
 }
