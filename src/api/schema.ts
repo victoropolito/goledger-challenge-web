@@ -8,13 +8,11 @@ export async function getSchema(assetType?: string) {
 }
 
 export async function getAssetTypes(): Promise<AssetTypeSummary[]> {
-  const data = await getSchema();
-  return data;
+  return getSchema();
 }
 
 export async function getAssetSchema(assetType: string) {
-  const data = await getSchema(assetType);
-  return data;
+  return getSchema(assetType);
 }
 
 export async function searchAssets(assetType: string) {

@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import AppLayout from "../components/layout/AppLayout";
-import Dashboard from "../pages/Dashboard";
+import Dashboard from "../pages/DashBoard";
 import TvShowsPage from "../pages/TvShowsPage";
 import SeasonsPage from "../pages/SeasonsPage";
 import EpisodesPage from "../pages/EpisodesPage";
