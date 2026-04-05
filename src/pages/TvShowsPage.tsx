@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getTvShowsList } from "../api/tvShows";
-import { getTx } from "../api/tx";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createTvShow, getTvShowsList } from "../api/tvShows";
 import TvShowForm from "../components/tv-shows/TvShowForm";
 import type { CreateTvShowInput } from "../types/api";
 
@@ -31,21 +30,29 @@ function TvShowCard({
 }
 
 export default function TvShowsPage() {
-  const [draft, setDraft] = useState<CreateTvShowInput | null>(null);
+  const queryClient = useQueryClient();
+  const [feedback, setFeedback] = useState<string>("");
 
   const tvShowsQuery = useQuery({
     queryKey: ["tv-shows"],
     queryFn: getTvShowsList,
   });
 
-  const txListQuery = useQuery({
-    queryKey: ["tx-list"],
-    queryFn: () => getTx(),
+  const createMutation = useMutation({
+    mutationFn: (values: CreateTvShowInput) => createTvShow(values),
+    onSuccess: async () => {
+      setFeedback("TV Show criado com sucesso.");
+      await queryClient.invalidateQueries({ queryKey: ["tv-shows"] });
+    },
+    onError: (error) => {
+      console.error(error);
+      setFeedback("Erro ao criar TV Show. Veja o console e a aba Network.");
+    },
   });
 
-  async function handleDraftSubmit(values: CreateTvShowInput) {
-    console.log("TV Show draft ready for create:", values);
-    setDraft(values);
+  async function handleCreate(values: CreateTvShowInput) {
+    setFeedback("");
+    await createMutation.mutateAsync(values);
   }
 
   if (tvShowsQuery.isLoading) {
@@ -69,7 +76,7 @@ export default function TvShowsPage() {
         <div>
           <h2 className="text-3xl font-bold">TV Shows</h2>
           <p className="mt-2 text-zinc-400">
-            Listagem e preparação do fluxo de criação.
+            Listagem e criação de TV Shows.
           </p>
         </div>
 
@@ -80,6 +87,12 @@ export default function TvShowsPage() {
           Atualizar
         </button>
       </header>
+
+      {feedback ? (
+        <section className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4 text-sm text-zinc-100">
+          {feedback}
+        </section>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <section className="space-y-4">
@@ -103,37 +116,10 @@ export default function TvShowsPage() {
         </section>
 
         <section className="space-y-6">
-          <TvShowForm onSubmit={handleDraftSubmit} />
-
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-            <h3 className="text-xl font-semibold">Draft do payload</h3>
-            <p className="mt-1 text-sm text-zinc-400">
-              Esse bloco mostra exatamente o que o formulário está produzindo.
-            </p>
-
-            <pre className="mt-4 overflow-auto rounded-xl bg-zinc-950 p-4 text-xs text-zinc-200">
-              {JSON.stringify(draft, null, 2)}
-            </pre>
-          </section>
-
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-            <h3 className="text-xl font-semibold">Transações disponíveis</h3>
-            <p className="mt-1 text-sm text-zinc-400">
-              Vamos usar esse retorno para descobrir o contrato exato do create.
-            </p>
-
-            {txListQuery.isLoading ? (
-              <p className="mt-4 text-zinc-300">Carregando transações...</p>
-            ) : txListQuery.isError ? (
-              <p className="mt-4 text-red-400">
-                Erro ao carregar transações. Verifique a requisição getTx.
-              </p>
-            ) : (
-              <pre className="mt-4 overflow-auto rounded-xl bg-zinc-950 p-4 text-xs text-zinc-200">
-                {JSON.stringify(txListQuery.data, null, 2)}
-              </pre>
-            )}
-          </section>
+          <TvShowForm
+            onSubmit={handleCreate}
+            isSubmitting={createMutation.isPending}
+          />
         </section>
       </div>
     </div>
