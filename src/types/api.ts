@@ -45,17 +45,6 @@ export type CreateTvShowInput = {
   recommendedAge: number;
 };
 
-export type Episode = {
-  season: AssetRef;
-  episodeNumber: number;
-  title: string;
-  releaseDate: string;
-  description: string;
-  rating?: number;
-  "@assetType"?: "episodes";
-  [key: string]: unknown;
-};
-
 export type Watchlist = {
   title: string;
   description?: string;
@@ -113,4 +102,29 @@ export type CreateSeasonInput = {
   number: number;
   tvShowKey: string;
   year: number;
+};
+
+export type Episode = {
+  season: AssetPointer | Season | string;
+  episodeNumber: number;
+  title: string;
+  releaseDate: string;
+  description: string;
+  rating?: number;
+  "@assetType"?: "episodes";
+  "@key"?: string;
+  "@lastTouchBy"?: string;
+  "@lastTx"?: string;
+  "@lastTxID"?: string;
+  "@lastUpdated"?: string;
+  [key: string]: unknown;
+};
+
+export type CreateEpisodeInput = {
+  seasonKey: string;
+  episodeNumber: number;
+  title: string;
+  releaseDate: string;
+  description: string;
+  rating?: number;
 };
