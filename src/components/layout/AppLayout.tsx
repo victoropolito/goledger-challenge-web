@@ -1,23 +1,26 @@
 import { NavLink, Outlet } from "react-router-dom";
 
 const linkBase =
-  "block rounded-lg px-3 py-2 text-sm font-medium transition-colors";
+  "block rounded-xl px-3 py-2.5 text-sm font-medium transition-colors";
 const linkInactive = "text-zinc-300 hover:bg-zinc-800 hover:text-white";
-const linkActive = "bg-zinc-100 text-zinc-900";
+const linkActive = "bg-white text-zinc-900";
 
 export default function AppLayout() {
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
-      <div className="grid min-h-screen grid-cols-[260px_1fr]">
-        <aside className="border-r border-zinc-800 bg-zinc-900/50 p-6">
+      <div className="grid min-h-screen grid-cols-1 xl:grid-cols-[280px_1fr]">
+        <aside className="border-b border-zinc-800 bg-zinc-900/60 p-6 xl:border-b-0 xl:border-r">
           <div className="mb-8">
-            <h1 className="text-xl font-bold">GoLedger Challenge</h1>
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+              GoLedger
+            </p>
+            <h1 className="mt-2 text-2xl font-bold">TV Shows Admin</h1>
             <p className="mt-2 text-sm text-zinc-400">
-              TV Shows catalog dashboard
+              Catálogo de séries, temporadas, episódios e watchlists.
             </p>
           </div>
 
-          <nav className="space-y-2">
+          <nav className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
             <NavLink
               to="/"
               end
@@ -66,8 +69,10 @@ export default function AppLayout() {
           </nav>
         </aside>
 
-        <main className="p-8">
-          <Outlet />
+        <main className="p-5 md:p-8">
+          <div className="mx-auto max-w-7xl">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

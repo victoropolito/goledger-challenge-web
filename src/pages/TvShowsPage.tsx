@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createTvShow,
@@ -7,6 +7,11 @@ import {
   updateTvShow,
 } from "../api/tvShows";
 import TvShowForm from "../components/tv-shows/TvShowForm";
+import EmptyState from "../components/ui/EmptyState";
+import FeedbackAlert from "../components/ui/FeedbackAlert";
+import PageHeader from "../components/ui/PageHeader";
+import StatCard from "../components/ui/StatCard";
+import { formatDateTime } from "../lib/format";
 import type { CreateTvShowInput, TvShow } from "../types/api";
 
 function TvShowCard({
@@ -21,21 +26,25 @@ function TvShowCard({
   isDeleting: boolean;
 }) {
   return (
-    <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+    <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-semibold">{show.title}</h3>
-          <p className="mt-2 text-sm text-zinc-400">{show.description}</p>
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold text-white">{show.title}</h3>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            {show.description}
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-200">
+              {show.recommendedAge}+ anos
+            </span>
+          </div>
 
           <div className="mt-4 space-y-1 text-xs text-zinc-500">
             <p>Key: {show["@key"] ?? "N/A"}</p>
-            <p>Última atualização: {show["@lastUpdated"] ?? "N/A"}</p>
+            <p>Última atualização: {formatDateTime(show["@lastUpdated"])}</p>
           </div>
         </div>
-
-        <span className="shrink-0 rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-200">
-          {show.recommendedAge}+ anos
-        </span>
       </div>
 
       <div className="mt-5 flex gap-3">
@@ -60,8 +69,10 @@ function TvShowCard({
 
 export default function TvShowsPage() {
   const queryClient = useQueryClient();
-  const [feedback, setFeedback] = useState<string>("");
+  const [feedback, setFeedback] = useState("");
+  const [feedbackType, setFeedbackType] = useState<"success" | "error" | "info">("info");
   const [editingShow, setEditingShow] = useState<TvShow | null>(null);
+  const [search, setSearch] = useState("");
 
   const tvShowsQuery = useQuery({
     queryKey: ["tv-shows"],
@@ -71,11 +82,13 @@ export default function TvShowsPage() {
   const createMutation = useMutation({
     mutationFn: (values: CreateTvShowInput) => createTvShow(values),
     onSuccess: async () => {
+      setFeedbackType("success");
       setFeedback("TV Show criado com sucesso.");
       await queryClient.invalidateQueries({ queryKey: ["tv-shows"] });
     },
     onError: (error) => {
       console.error(error);
+      setFeedbackType("error");
       setFeedback("Erro ao criar TV Show. Veja o console e a aba Network.");
     },
   });
@@ -89,12 +102,14 @@ export default function TvShowsPage() {
       values: CreateTvShowInput;
     }) => updateTvShow(key, values),
     onSuccess: async () => {
+      setFeedbackType("success");
       setFeedback("TV Show atualizado com sucesso.");
       setEditingShow(null);
       await queryClient.invalidateQueries({ queryKey: ["tv-shows"] });
     },
     onError: (error) => {
       console.error(error);
+      setFeedbackType("error");
       setFeedback("Erro ao atualizar TV Show. Veja o console e a aba Network.");
     },
   });
@@ -102,6 +117,7 @@ export default function TvShowsPage() {
   const deleteMutation = useMutation({
     mutationFn: (key: string) => deleteTvShow(key),
     onSuccess: async () => {
+      setFeedbackType("success");
       setFeedback("TV Show excluído com sucesso.");
       if (editingShow) {
         setEditingShow(null);
@@ -110,6 +126,7 @@ export default function TvShowsPage() {
     },
     onError: (error) => {
       console.error(error);
+      setFeedbackType("error");
       setFeedback("Erro ao excluir TV Show. Veja o console e a aba Network.");
     },
   });
@@ -121,6 +138,7 @@ export default function TvShowsPage() {
 
   async function handleUpdate(values: CreateTvShowInput) {
     if (!editingShow?.["@key"]) {
+      setFeedbackType("error");
       setFeedback("Não foi possível editar: @key ausente.");
       return;
     }
@@ -134,6 +152,7 @@ export default function TvShowsPage() {
 
   async function handleDelete(show: TvShow) {
     if (!show["@key"]) {
+      setFeedbackType("error");
       setFeedback("Não foi possível excluir: @key ausente.");
       return;
     }
@@ -160,53 +179,84 @@ export default function TvShowsPage() {
     );
   }
 
-  const data = tvShowsQuery.data;
-  const items = data?.items ?? [];
+  const items = tvShowsQuery.data?.items ?? [];
+
+  const filteredItems = useMemo(() => {
+    const term = search.trim().toLowerCase();
+
+    if (!term) return items;
+
+    return items.filter((show) => {
+      return (
+        show.title.toLowerCase().includes(term)
+      );
+    });
+  }, [items, search]);
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold">TV Shows</h2>
-          <p className="mt-2 text-zinc-400">
-            CRUD completo de TV Shows.
-          </p>
-        </div>
-
-        <button
-          onClick={() => tvShowsQuery.refetch()}
-          className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-        >
-          Atualizar
-        </button>
-      </header>
+      <PageHeader
+        title="TV Shows"
+        description="Gerencie o catálogo principal de séries da aplicação."
+        action={
+          <button
+            onClick={() => tvShowsQuery.refetch()}
+            className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+          >
+            Atualizar
+          </button>
+        }
+      />
 
       {feedback ? (
-        <section className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4 text-sm text-zinc-100">
-          {feedback}
-        </section>
+        <FeedbackAlert message={feedback} variant={feedbackType} />
       ) : null}
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <StatCard
+          label="Total de TV Shows"
+          value={items.length}
+          helperText="Quantidade total cadastrada."
+        />
+        <StatCard
+          label="Resultados filtrados"
+          value={filteredItems.length}
+          helperText="Quantidade visível com base na busca."
+        />
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+          <label className="block text-xs uppercase tracking-wide text-zinc-500">
+            Buscar
+          </label>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por título"
+            className="mt-3 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-zinc-500"
+          />
+        </section>
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <section className="space-y-4">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-            <p className="text-sm text-zinc-300">
-              Total encontrado:{" "}
-              <span className="font-semibold">{items.length}</span>
-            </p>
-          </div>
-
-          <section className="grid gap-4">
-            {items.map((show) => (
-              <TvShowCard
-                key={show["@key"] ?? show.title}
-                show={show}
-                onEdit={setEditingShow}
-                onDelete={handleDelete}
-                isDeleting={deleteMutation.isPending}
-              />
-            ))}
-          </section>
+          {filteredItems.length > 0 ? (
+            <section className="grid gap-4">
+              {filteredItems.map((show) => (
+                <TvShowCard
+                  key={show["@key"] ?? show.title}
+                  show={show}
+                  onEdit={setEditingShow}
+                  onDelete={handleDelete}
+                  isDeleting={deleteMutation.isPending}
+                />
+              ))}
+            </section>
+          ) : (
+            <EmptyState
+              title="Nenhum TV Show encontrado"
+              description="Ajuste a busca ou crie um novo TV Show no formulário ao lado."
+            />
+          )}
         </section>
 
         <section className="space-y-6">
