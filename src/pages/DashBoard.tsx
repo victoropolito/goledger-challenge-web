@@ -10,148 +10,56 @@ import QuickLinkCard from "../components/ui/QuickLinkCard";
 import StatCard from "../components/ui/StatCard";
 
 export default function Dashboard() {
-  const assetTypesQuery = useQuery({
-    queryKey: ["asset-types"],
-    queryFn: getAssetTypes,
-  });
+  const assetTypesQuery = useQuery({ queryKey: ["asset-types"], queryFn: getAssetTypes });
+  const tvShowsQuery = useQuery({ queryKey: ["tv-shows"], queryFn: getTvShowsList });
+  const seasonsQuery = useQuery({ queryKey: ["seasons"], queryFn: getSeasonsList });
+  const episodesQuery = useQuery({ queryKey: ["episodes"], queryFn: getEpisodesList });
+  const watchlistsQuery = useQuery({ queryKey: ["watchlists"], queryFn: getWatchlistsList });
 
-  const tvShowsQuery = useQuery({
-    queryKey: ["tv-shows"],
-    queryFn: getTvShowsList,
-  });
+  const isLoading = assetTypesQuery.isLoading || tvShowsQuery.isLoading || seasonsQuery.isLoading || episodesQuery.isLoading || watchlistsQuery.isLoading;
+  const isError = assetTypesQuery.isError || tvShowsQuery.isError || seasonsQuery.isError || episodesQuery.isError || watchlistsQuery.isError;
 
-  const seasonsQuery = useQuery({
-    queryKey: ["seasons"],
-    queryFn: getSeasonsList,
-  });
-
-  const episodesQuery = useQuery({
-    queryKey: ["episodes"],
-    queryFn: getEpisodesList,
-  });
-
-  const watchlistsQuery = useQuery({
-    queryKey: ["watchlists"],
-    queryFn: getWatchlistsList,
-  });
-
-  const isLoading =
-    assetTypesQuery.isLoading ||
-    tvShowsQuery.isLoading ||
-    seasonsQuery.isLoading ||
-    episodesQuery.isLoading ||
-    watchlistsQuery.isLoading;
-
-  const isError =
-    assetTypesQuery.isError ||
-    tvShowsQuery.isError ||
-    seasonsQuery.isError ||
-    episodesQuery.isError ||
-    watchlistsQuery.isError;
-
-  const assetTypes = assetTypesQuery.data ?? [];
   const tvShows = tvShowsQuery.data?.items ?? [];
   const seasons = seasonsQuery.data?.items ?? [];
   const episodes = episodesQuery.data?.items ?? [];
   const watchlists = watchlistsQuery.data?.items ?? [];
 
-  const visibleAssetTypes = useMemo(() => {
-    return assetTypes.filter((item) =>
-      ["tvShows", "seasons", "episodes", "watchlist"].includes(item.tag)
-    );
-  }, [assetTypes]);
-
-  if (isLoading) {
-    return <div className="text-zinc-300">Carregando dashboard...</div>;
-  }
-
-  if (isError) {
-    return (
-      <div className="text-red-400">
-        Erro ao carregar o dashboard.
-      </div>
-    );
-  }
+  if (isLoading) return <div className="text-zinc-500">Carregando dashboard...</div>;
+  if (isError) return <div className="text-red-500">Erro ao carregar o dashboard.</div>;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Dashboard"
         description="Visão geral do catálogo de séries, temporadas, episódios e watchlists."
+        action={
+          <button
+            onClick={() => {
+              tvShowsQuery.refetch();
+              seasonsQuery.refetch();
+              episodesQuery.refetch();
+              watchlistsQuery.refetch();
+            }}
+            className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800"
+          >
+            Atualizar Tudo
+          </button>
+        }
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Séries"
-          value={tvShows.length}
-          helperText="Séries cadastradas no catálogo."
-        />
-        <StatCard
-          label="Temporadas"
-          value={seasons.length}
-          helperText="Temporadas vinculadas as séries."
-        />
-        <StatCard
-          label="Episódios"
-          value={episodes.length}
-          helperText="Episódios cadastrados."
-        />
-        <StatCard
-          label="Watchlists"
-          value={watchlists.length}
-          helperText="Listas personalizadas criadas."
-        />
+        <StatCard label="Séries" value={tvShows.length} helperText="Séries cadastradas no catálogo." />
+        <StatCard label="Temporadas" value={seasons.length} helperText="Temporadas vinculadas as séries." />
+        <StatCard label="Episódios" value={episodes.length} helperText="Episódios cadastrados." />
+        <StatCard label="Watchlists" value={watchlists.length} helperText="Listas personalizadas criadas." />
       </div>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <QuickLinkCard
-          to="/tv-shows"
-          title="Gerenciar Séries"
-          description="Criar, editar e excluir séries."
-        />
-        <QuickLinkCard
-          to="/seasons"
-          title="Gerenciar Temporadas"
-          description="Criar e organizar temporadas por série."
-        />
-        <QuickLinkCard
-          to="/episodes"
-          title="Gerenciar Episódios"
-          description="Cadastrar episódios por temporada."
-        />
-        <QuickLinkCard
-          to="/watchlist"
-          title="Gerenciar Watchlists"
-          description="Montar listas de séries para assistir."
-        />
+        <QuickLinkCard to="/tv-shows" title="Gerenciar Séries" description="Criar, editar e excluir séries." />
+        <QuickLinkCard to="/seasons" title="Gerenciar Temporadas" description="Criar e organizar temporadas por série." />
+        <QuickLinkCard to="/episodes" title="Gerenciar Episódios" description="Cadastrar episódios por temporada." />
+        <QuickLinkCard to="/watchlist" title="Gerenciar Watchlists" description="Montar listas de séries para assistir." />
       </section>
-
-      {/* <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-        <h3 className="text-xl font-semibold text-white">Asset Types</h3>
-        <p className="mt-2 text-sm text-zinc-400">
-          Estruturas principais identificadas pela API.
-        </p>
-
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {visibleAssetTypes.map((asset) => (
-            <article
-              key={asset.tag}
-              className="rounded-xl border border-zinc-800 bg-zinc-950 p-4"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <h4 className="font-semibold text-white">{asset.label}</h4>
-                <span className="rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-300">
-                  {asset.tag}
-                </span>
-              </div>
-
-              <p className="mt-3 text-sm text-zinc-400">
-                {asset.description}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section> */}
     </div>
   );
 }

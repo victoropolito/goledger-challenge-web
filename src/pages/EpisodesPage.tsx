@@ -4,20 +4,17 @@ import EpisodeForm from "../components/episodes/EpisodeForm";
 import EmptyState from "../components/ui/EmptyState";
 import FeedbackAlert from "../components/ui/FeedbackAlert";
 import PageHeader from "../components/ui/PageHeader";
-import SearchCard from "../components/ui/SearchCard";
 import StatCard from "../components/ui/StatCard";
+import Pagination from "../components/ui/Pagination";
 import { createEpisode, deleteEpisode, getEpisodesList, updateEpisode } from "../api/episodes";
 import { getSeasonsList } from "../api/seasons";
 import { getTvShowsList } from "../api/tvShows";
-import { formatDateTime } from "../lib/format";
 import type { CreateEpisodeInput, Episode, Season, TvShow } from "../types/api";
 
 function getSeasonKey(value: Episode["season"] | Season["tvShow"]): string {
   if (!value) return "";
   if (typeof value === "string") return value;
-  if (typeof value === "object" && value["@key"]) {
-    return String(value["@key"]);
-  }
+  if (typeof value === "object" && value["@key"]) return String(value["@key"]);
   return "";
 }
 
@@ -31,73 +28,39 @@ function getTvShowTitle(tvShowKey: string, tvShows: TvShow[]) {
 
 function getSeasonLabel(season: Season, tvShows: TvShow[]) {
   const tvShowTitle = getTvShowTitle(getTvShowKeyFromSeason(season), tvShows);
-  return `${tvShowTitle} — Season ${season.number}`;
+  return `${tvShowTitle} — Temporada ${season.number}`;
 }
 
-function getEpisodeSeasonLabel(
-  episode: Episode,
-  seasons: Season[],
-  tvShows: TvShow[]
-) {
+function getEpisodeSeasonLabel(episode: Episode, seasons: Season[], tvShows: TvShow[]) {
   const seasonKey = getSeasonKey(episode.season);
   const season = seasons.find((item) => item["@key"] === seasonKey);
-
-  if (!season) return seasonKey || "Season não identificada";
-
+  if (!season) return seasonKey || "Temporada não identificada";
   return getSeasonLabel(season, tvShows);
 }
 
-function EpisodeCard({
-  episode,
-  seasonLabel,
-  onEdit,
-  onDelete,
-  isDeleting,
-}: {
-  episode: Episode;
-  seasonLabel: string;
-  onEdit: (episode: Episode) => void;
-  onDelete: (episode: Episode) => void;
-  isDeleting: boolean;
-}) {
+function EpisodeCard({ episode, seasonLabel, onEdit, onDelete, isDeleting }: any) {
   return (
-    <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-sm">
+    <article className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <div>
-        <h3 className="text-lg font-semibold text-white">
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
           Ep. {episode.episodeNumber} — {episode.title}
         </h3>
-
-        <p className="mt-2 text-sm text-zinc-400">{seasonLabel}</p>
-        <p className="mt-2 text-sm leading-6 text-zinc-400">{episode.description}</p>
-
+        <p className="mt-2 text-sm font-medium text-zinc-600 dark:text-zinc-400">{seasonLabel}</p>
+        <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">{episode.description}</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-200">
+          <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
             Nota: {episode.rating ?? "N/A"}
           </span>
-          <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-200">
+          <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
             Lançamento: {new Date(episode.releaseDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
           </span>
         </div>
-
-        <div className="mt-4 space-y-1 text-xs text-zinc-500">
-          <p>Key: {episode["@key"] ?? "N/A"}</p>
-          <p>Última atualização: {episode["@lastUpdated"] ? new Date(episode["@lastUpdated"]).toLocaleDateString('pt-BR') : "N/A"}</p>
-        </div>
       </div>
-
       <div className="mt-5 flex gap-3">
-        <button
-          onClick={() => onEdit(episode)}
-          className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-        >
+        <button onClick={() => onEdit(episode)} className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:hover:bg-zinc-800">
           Editar
         </button>
-
-        <button
-          onClick={() => onDelete(episode)}
-          disabled={isDeleting}
-          className="rounded-xl border border-red-800 bg-red-950/40 px-4 py-2 text-sm font-medium text-red-200 hover:bg-red-950 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <button onClick={() => onDelete(episode)} disabled={isDeleting} className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950">
           {isDeleting ? "Excluindo..." : "Excluir"}
         </button>
       </div>
@@ -105,227 +68,155 @@ function EpisodeCard({
   );
 }
 
+const ITEMS_PER_PAGE = 5;
+
 export default function EpisodesPage() {
   const queryClient = useQueryClient();
   const [feedback, setFeedback] = useState("");
   const [feedbackType, setFeedbackType] = useState<"success" | "error" | "info">("info");
   const [editingEpisode, setEditingEpisode] = useState<Episode | null>(null);
+  
   const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState("season-ep-asc");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const episodesQuery = useQuery({
-    queryKey: ["episodes"],
-    queryFn: getEpisodesList,
-  });
-
-  const seasonsQuery = useQuery({
-    queryKey: ["seasons"],
-    queryFn: getSeasonsList,
-  });
-
-  const tvShowsQuery = useQuery({
-    queryKey: ["tv-shows"],
-    queryFn: getTvShowsList,
-  });
+  const episodesQuery = useQuery({ queryKey: ["episodes"], queryFn: getEpisodesList });
+  const seasonsQuery = useQuery({ queryKey: ["seasons"], queryFn: getSeasonsList });
+  const tvShowsQuery = useQuery({ queryKey: ["tv-shows"], queryFn: getTvShowsList });
 
   const createMutation = useMutation({
     mutationFn: (values: CreateEpisodeInput) => createEpisode(values),
     onSuccess: async () => {
-      setFeedbackType("success");
-      setFeedback("Episode criado com sucesso.");
+      setFeedbackType("success"); setFeedback("Episódio criado com sucesso.");
       await queryClient.invalidateQueries({ queryKey: ["episodes"] });
-    },
-    onError: (error) => {
-      console.error(error);
-      setFeedbackType("error");
-      setFeedback("Erro ao criar episode.");
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ key, values }: { key: string; values: CreateEpisodeInput }) =>
-      updateEpisode(key, values),
+    mutationFn: ({ key, values }: { key: string; values: CreateEpisodeInput }) => updateEpisode(key, values),
     onSuccess: async () => {
-      setFeedbackType("success");
-      setFeedback("Episode atualizado com sucesso.");
-      setEditingEpisode(null);
-      await queryClient.invalidateQueries({ queryKey: ["episodes"] });
-    },
-    onError: (error) => {
-      console.error(error);
-      setFeedbackType("error");
-      setFeedback("Erro ao atualizar episódio.");
+      setFeedbackType("success"); setFeedback("Episódio atualizado com sucesso.");
+      setEditingEpisode(null); await queryClient.invalidateQueries({ queryKey: ["episodes"] });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (key: string) => deleteEpisode(key),
     onSuccess: async () => {
-      setFeedbackType("success");
-      setFeedback("Episódio excluído com sucesso.");
-      setEditingEpisode(null);
-      await queryClient.invalidateQueries({ queryKey: ["episodes"] });
-    },
-    onError: (error) => {
-      console.error(error);
-      setFeedbackType("error");
-      setFeedback("Erro ao excluir episódio.");
+      setFeedbackType("success"); setFeedback("Episódio excluído com sucesso.");
+      setEditingEpisode(null); await queryClient.invalidateQueries({ queryKey: ["episodes"] });
     },
   });
-
-  async function handleCreate(values: CreateEpisodeInput) {
-    setFeedback("");
-    await createMutation.mutateAsync(values);
-  }
-
-  async function handleUpdate(values: CreateEpisodeInput) {
-    if (!editingEpisode?.["@key"]) {
-      setFeedbackType("error");
-      setFeedback("Não foi possível editar: @key ausente.");
-      return;
-    }
-
-    setFeedback("");
-    await updateMutation.mutateAsync({
-      key: editingEpisode["@key"],
-      values,
-    });
-  }
-
-  async function handleDelete(episode: Episode) {
-    if (!episode["@key"]) {
-      setFeedbackType("error");
-      setFeedback("Não foi possível excluir: @key ausente.");
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Tem certeza que deseja excluir o episódio ${episode.episodeNumber} - ${episode.title}?`
-    );
-
-    if (!confirmed) return;
-
-    setFeedback("");
-    await deleteMutation.mutateAsync(episode["@key"]);
-  }
 
   const episodes = episodesQuery.data?.items ?? [];
   const seasons = seasonsQuery.data?.items ?? [];
   const tvShows = tvShowsQuery.data?.items ?? [];
 
-  const filteredEpisodes = useMemo(() => {
-    const term = search.trim().toLowerCase();
+  const processedItems = useMemo(() => {
+    let result = [...episodes];
 
-    return [...episodes]
-      .sort((a, b) => {
-        const seasonALabel = getEpisodeSeasonLabel(a, seasons, tvShows);
-        const seasonBLabel = getEpisodeSeasonLabel(b, seasons, tvShows);
-
-        if (seasonALabel !== seasonBLabel) {
-          return seasonALabel.localeCompare(seasonBLabel);
-        }
-
-        return a.episodeNumber - b.episodeNumber;
-      })
-      .filter((episode) => {
-        if (!term) return true;
-
+    if (search.trim()) {
+      const term = search.toLowerCase();
+      result = result.filter(episode => {
         const seasonLabel = getEpisodeSeasonLabel(episode, seasons, tvShows).toLowerCase();
-
         return (
           episode.title.toLowerCase().includes(term) ||
-          episode.description.toLowerCase().includes(term) ||
           seasonLabel.includes(term) ||
           String(episode.episodeNumber).includes(term)
         );
       });
-  }, [episodes, seasons, tvShows, search]);
+    }
+
+    result.sort((a, b) => {
+      if (sortOrder === "season-ep-asc" || sortOrder === "season-ep-desc") {
+        const seasonALabel = getEpisodeSeasonLabel(a, seasons, tvShows);
+        const seasonBLabel = getEpisodeSeasonLabel(b, seasons, tvShows);
+        if (seasonALabel !== seasonBLabel) {
+           return sortOrder === "season-ep-asc" ? seasonALabel.localeCompare(seasonBLabel) : seasonBLabel.localeCompare(seasonALabel);
+        }
+        return sortOrder === "season-ep-asc" ? a.episodeNumber - b.episodeNumber : b.episodeNumber - a.episodeNumber;
+      }
+      if (sortOrder === "rating-desc") return (b.rating || 0) - (a.rating || 0);
+      return 0;
+    });
+
+    return result;
+  }, [episodes, seasons, tvShows, search, sortOrder]);
+
+  const totalPages = Math.ceil(processedItems.length / ITEMS_PER_PAGE);
+  const paginatedItems = processedItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  useMemo(() => setCurrentPage(1), [search, sortOrder]);
 
   if (episodesQuery.isLoading || seasonsQuery.isLoading || tvShowsQuery.isLoading) {
-    return <div className="text-zinc-300">Carregando episódios...</div>;
-  }
-
-  if (episodesQuery.isError || seasonsQuery.isError || tvShowsQuery.isError) {
-    return (
-      <div className="text-red-400">
-        Erro ao carregar episódios, temporadas ou séries.
-      </div>
-    );
-  }
-
-  if (seasons.length === 0) {
-    return (
-      <div className="space-y-4">
-        <PageHeader
-          title="Episódios"
-          description="Gerencie episódios vinculados às temporadas cadastradas."
-        />
-        <EmptyState
-          title="Nenhuma temporada cadastrada"
-          description="Cadastre ao menos uma temporada antes de criar episódios."
-        />
-      </div>
-    );
+    return <div className="text-zinc-500">Carregando episódios...</div>;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <PageHeader
         title="Episódios"
-        description="Gerencie episódios vinculados às temporadas cadastradas."
-        action={
-          <button
-            onClick={() => {
-              episodesQuery.refetch();
-              seasonsQuery.refetch();
-              tvShowsQuery.refetch();
-            }}
-            className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-          >
-            Atualizar
-          </button>
-        }
+        description="Gerencie episódios vinculados às temporadas."
       />
 
-      {feedback ? <FeedbackAlert message={feedback} variant={feedbackType} /> : null}
+      {feedback && <FeedbackAlert message={feedback} variant={feedbackType} />}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <StatCard label="Total de Episódios" value={episodes.length} helperText="Quantidade total cadastrada." />
-        <StatCard label="Resultados filtrados" value={filteredEpisodes.length} helperText="Itens visíveis com base na busca." />
-        <SearchCard
-          value={search}
-          onChange={setSearch}
-          placeholder="Buscar por episódio, season ou descrição"
-        />
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard label="Total de Episódios" value={episodes.length} />
+        
+        <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <label className="block text-xs uppercase tracking-wide text-zinc-500">Buscar</label>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Título, temporada ou número..."
+            className="mt-3 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+          />
+        </section>
+
+        <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <label className="block text-xs uppercase tracking-wide text-zinc-500">Ordenar por</label>
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            className="mt-3 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+          >
+            <option value="season-ep-asc">Temporada e Episódio (Cresc)</option>
+            <option value="season-ep-desc">Temporada e Episódio (Decresc)</option>
+            <option value="rating-desc">Melhor Nota</option>
+          </select>
+        </section>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] items-start">
         <section className="space-y-4">
-          {filteredEpisodes.length > 0 ? (
-            <section className="grid gap-4">
-              {filteredEpisodes.map((episode) => (
-                <EpisodeCard
-                  key={episode["@key"] ?? `${getSeasonKey(episode.season)}-${episode.episodeNumber}`}
-                  episode={episode}
-                  seasonLabel={getEpisodeSeasonLabel(episode, seasons, tvShows)}
-                  onEdit={setEditingEpisode}
-                  onDelete={handleDelete}
-                  isDeleting={deleteMutation.isPending}
-                />
-              ))}
-            </section>
+          {paginatedItems.length > 0 ? (
+            <>
+              <div className="grid gap-4">
+                {paginatedItems.map((episode) => (
+                  <EpisodeCard
+                    key={episode["@key"]!}
+                    episode={episode}
+                    seasonLabel={getEpisodeSeasonLabel(episode, seasons, tvShows)}
+                    onEdit={setEditingEpisode}
+                    onDelete={(e: Episode) => { if(window.confirm(`Excluir Episódio ${e.episodeNumber}?`)) deleteMutation.mutate(e["@key"]!) }}
+                    isDeleting={deleteMutation.isPending}
+                  />
+                ))}
+              </div>
+              <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+            </>
           ) : (
-            <EmptyState
-              title="Nenhum episódio encontrado"
-              description="Ajuste a busca ou crie um novo episódio no formulário ao lado."
-            />
+            <EmptyState title="Nenhum episódio encontrado" description="Ajuste a busca ou crie um novo." />
           )}
         </section>
 
-        <section className="space-y-6">
+        <section className="sticky top-[110px] space-y-6">
           {editingEpisode ? (
             <EpisodeForm
               seasons={seasons}
-              getSeasonLabel={(season) => getSeasonLabel(season, tvShows)}
+              getSeasonLabel={(s) => getSeasonLabel(s, tvShows)}
               initialValues={{
                 seasonKey: getSeasonKey(editingEpisode.season),
                 episodeNumber: editingEpisode.episodeNumber,
@@ -334,19 +225,18 @@ export default function EpisodesPage() {
                 description: editingEpisode.description,
                 rating: editingEpisode.rating,
               }}
-              onSubmit={handleUpdate}
+              onSubmit={async (v) => { await updateMutation.mutateAsync({ key: editingEpisode["@key"]!, values: v }) }}
               onCancel={() => setEditingEpisode(null)}
               isSubmitting={updateMutation.isPending}
               submitLabel="Salvar alterações"
               title={`Editar episódio ${editingEpisode.episodeNumber}`}
-              descriptionText="Como season e episodeNumber são chave, edite os demais campos."
               disableKeyFields
             />
           ) : (
             <EpisodeForm
               seasons={seasons}
-              getSeasonLabel={(season) => getSeasonLabel(season, tvShows)}
-              onSubmit={handleCreate}
+              getSeasonLabel={(s) => getSeasonLabel(s, tvShows)}
+              onSubmit={async (v) => { await createMutation.mutateAsync(v) }}
               isSubmitting={createMutation.isPending}
             />
           )}

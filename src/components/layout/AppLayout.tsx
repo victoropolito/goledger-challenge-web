@@ -2,20 +2,22 @@ import { NavLink, Outlet } from "react-router-dom";
 
 const linkBase =
   "block rounded-xl px-3 py-2.5 text-sm font-medium transition-colors";
-const linkInactive = "text-zinc-300 hover:bg-zinc-800 hover:text-white";
-const linkActive = "bg-white text-zinc-900";
+const linkInactive = 
+  "text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white";
+const linkActive = 
+  "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900";
 
 export default function AppLayout() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 transition-colors duration-300 dark:bg-zinc-950 dark:text-white">
       <div className="grid min-h-screen grid-cols-1 xl:grid-cols-[280px_1fr]">
-        <aside className="border-b border-zinc-800 bg-zinc-900/60 p-6 xl:border-b-0 xl:border-r">
+        <aside className="border-b border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900/60 xl:sticky xl:top-0 xl:h-screen xl:overflow-y-auto xl:border-b-0 xl:border-r">
           <div className="mb-8">
             <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
               GoLedger
             </p>
             <h1 className="mt-2 text-2xl font-bold">TV Shows Admin</h1>
-            <p className="mt-2 text-sm text-zinc-400">
+            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
               Catálogo de séries, temporadas, episódios e watchlists.
             </p>
           </div>

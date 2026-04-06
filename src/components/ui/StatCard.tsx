@@ -4,17 +4,13 @@ type StatCardProps = {
   helperText?: string;
 };
 
-export default function StatCard({
-  label,
-  value,
-  helperText,
-}: StatCardProps) {
+export default function StatCard({ label, value, helperText }: StatCardProps) {
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-      <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-white">{value}</p>
+    <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <p className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-zinc-900 dark:text-white">{value}</p>
       {helperText ? (
-        <p className="mt-2 text-sm text-zinc-400">{helperText}</p>
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-500">{helperText}</p>
       ) : null}
     </section>
   );
