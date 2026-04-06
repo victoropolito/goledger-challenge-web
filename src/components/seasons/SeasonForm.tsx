@@ -25,8 +25,8 @@ export default function SeasonForm({
   onSubmit,
   onCancel,
   isSubmitting = false,
-  submitLabel = "Salvar Season",
-  title = "Criar Season",
+  submitLabel = "Salvar Temporada",
+  title = "Criar Temporada",
   descriptionText = "Selecione a série, número da temporada e ano.",
   disableKeyFields = false,
 }: SeasonFormProps) {
@@ -76,7 +76,7 @@ export default function SeasonForm({
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-zinc-200">
-          TV Show
+          Série
         </label>
         <select
           value={form.tvShowKey}
@@ -87,7 +87,7 @@ export default function SeasonForm({
           className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-zinc-500 disabled:opacity-60"
           required
         >
-          <option value="">Selecione um TV Show</option>
+          <option value="">Selecione uma série</option>
           {tvShows.map((show) => (
             <option key={show["@key"] ?? show.title} value={show["@key"]}>
               {show.title}
@@ -98,7 +98,7 @@ export default function SeasonForm({
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-zinc-200">
-          Season Number
+          Temporada
         </label>
         <input
           type="number"
@@ -115,7 +115,7 @@ export default function SeasonForm({
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-zinc-200">
-          Year
+          Ano
         </label>
         <input
           type="number"

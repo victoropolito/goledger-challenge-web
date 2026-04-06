@@ -68,7 +68,7 @@ export default function Dashboard() {
   if (isError) {
     return (
       <div className="text-red-400">
-        Erro ao carregar o dashboard. Verifique o console e a aba Network.
+        Erro ao carregar o dashboard.
       </div>
     );
   }
@@ -82,19 +82,19 @@ export default function Dashboard() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="TV Shows"
+          label="Séries"
           value={tvShows.length}
           helperText="Séries cadastradas no catálogo."
         />
         <StatCard
-          label="Seasons"
+          label="Temporadas"
           value={seasons.length}
-          helperText="Temporadas vinculadas aos TV Shows."
+          helperText="Temporadas vinculadas as séries."
         />
         <StatCard
-          label="Episodes"
+          label="Episódios"
           value={episodes.length}
-          helperText="Episódios cadastrados por season."
+          helperText="Episódios cadastrados."
         />
         <StatCard
           label="Watchlists"
@@ -106,17 +106,17 @@ export default function Dashboard() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <QuickLinkCard
           to="/tv-shows"
-          title="Gerenciar TV Shows"
+          title="Gerenciar Séries"
           description="Criar, editar e excluir séries."
         />
         <QuickLinkCard
           to="/seasons"
-          title="Gerenciar Seasons"
+          title="Gerenciar Temporadas"
           description="Criar e organizar temporadas por série."
         />
         <QuickLinkCard
           to="/episodes"
-          title="Gerenciar Episodes"
+          title="Gerenciar Episódios"
           description="Cadastrar episódios por temporada."
         />
         <QuickLinkCard
@@ -126,7 +126,7 @@ export default function Dashboard() {
         />
       </section>
 
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+      {/* <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
         <h3 className="text-xl font-semibold text-white">Asset Types</h3>
         <p className="mt-2 text-sm text-zinc-400">
           Estruturas principais identificadas pela API.
@@ -151,7 +151,7 @@ export default function Dashboard() {
             </article>
           ))}
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }

@@ -64,9 +64,9 @@ export default function EpisodeForm({
   onSubmit,
   onCancel,
   isSubmitting = false,
-  submitLabel = "Salvar Episode",
-  title = "Criar Episode",
-  descriptionText = "Selecione a season e preencha os dados do episódio.",
+  submitLabel = "Salvar Episódio",
+  title = "Criar Episódio",
+  descriptionText = "Selecione a temporada e preencha os dados do episódio.",
   disableKeyFields = false,
 }: EpisodeFormProps) {
   const [form, setForm] = useState<EpisodeFormState>(initialState);
@@ -127,7 +127,7 @@ export default function EpisodeForm({
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-zinc-200">
-          Season
+          Temporadas
         </label>
         <select
           value={form.seasonKey}
@@ -138,7 +138,7 @@ export default function EpisodeForm({
           className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-zinc-500 disabled:opacity-60"
           required
         >
-          <option value="">Selecione uma season</option>
+          <option value="">Selecione uma temporada</option>
           {seasons.map((season) => (
             <option key={season["@key"]} value={season["@key"]}>
               {getSeasonLabel(season)}
@@ -149,7 +149,7 @@ export default function EpisodeForm({
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-zinc-200">
-          Episode Number
+          Número do Episódio
         </label>
         <input
           type="number"
@@ -169,7 +169,7 @@ export default function EpisodeForm({
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-zinc-200">
-          Title
+          Título
         </label>
         <input
           type="text"
@@ -184,22 +184,7 @@ export default function EpisodeForm({
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-zinc-200">
-          Release Date
-        </label>
-        <input
-          type="datetime-local"
-          value={form.releaseDate}
-          onChange={(e) =>
-            setForm((prev) => ({ ...prev, releaseDate: e.target.value }))
-          }
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-zinc-500"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-zinc-200">
-          Description
+          Descrição
         </label>
         <textarea
           value={form.description}
@@ -210,10 +195,26 @@ export default function EpisodeForm({
           required
         />
       </div>
+      
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-zinc-200">
+          Data de lançamento
+        </label>
+        <input
+          type="date"
+          value={form.releaseDate}
+          onChange={(e) =>
+            setForm((prev) => ({ ...prev, releaseDate: e.target.value }))
+          }
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-zinc-500"
+          required
+        />
+      </div>
+
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-zinc-200">
-          Rating
+          Nota
         </label>
         <input
           type="number"

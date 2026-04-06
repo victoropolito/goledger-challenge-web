@@ -37,7 +37,7 @@ export default function AppLayout() {
                 `${linkBase} ${isActive ? linkActive : linkInactive}`
               }
             >
-              TV Shows
+              Séries
             </NavLink>
 
             <NavLink
@@ -46,7 +46,7 @@ export default function AppLayout() {
                 `${linkBase} ${isActive ? linkActive : linkInactive}`
               }
             >
-              Seasons
+              Temporadas
             </NavLink>
 
             <NavLink
@@ -55,7 +55,7 @@ export default function AppLayout() {
                 `${linkBase} ${isActive ? linkActive : linkInactive}`
               }
             >
-              Episodes
+              Episódios
             </NavLink>
 
             <NavLink

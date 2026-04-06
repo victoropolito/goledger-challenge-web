@@ -72,16 +72,16 @@ function EpisodeCard({
 
         <div className="mt-4 flex flex-wrap gap-2">
           <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-200">
-            Rating: {episode.rating ?? "N/A"}
+            Nota: {episode.rating ?? "N/A"}
           </span>
           <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-200">
-            Lançamento: {formatDateTime(episode.releaseDate)}
+            Lançamento: {new Date(episode.releaseDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
           </span>
         </div>
 
         <div className="mt-4 space-y-1 text-xs text-zinc-500">
           <p>Key: {episode["@key"] ?? "N/A"}</p>
-          <p>Última atualização: {formatDateTime(episode["@lastUpdated"])}</p>
+          <p>Última atualização: {episode["@lastUpdated"] ? new Date(episode["@lastUpdated"]).toLocaleDateString('pt-BR') : "N/A"}</p>
         </div>
       </div>
 
@@ -137,7 +137,7 @@ export default function EpisodesPage() {
     onError: (error) => {
       console.error(error);
       setFeedbackType("error");
-      setFeedback("Erro ao criar episode. Veja o console e a aba Network.");
+      setFeedback("Erro ao criar episode.");
     },
   });
 
@@ -153,7 +153,7 @@ export default function EpisodesPage() {
     onError: (error) => {
       console.error(error);
       setFeedbackType("error");
-      setFeedback("Erro ao atualizar episode. Veja o console e a aba Network.");
+      setFeedback("Erro ao atualizar episódio.");
     },
   });
 
@@ -161,14 +161,14 @@ export default function EpisodesPage() {
     mutationFn: (key: string) => deleteEpisode(key),
     onSuccess: async () => {
       setFeedbackType("success");
-      setFeedback("Episode excluído com sucesso.");
+      setFeedback("Episódio excluído com sucesso.");
       setEditingEpisode(null);
       await queryClient.invalidateQueries({ queryKey: ["episodes"] });
     },
     onError: (error) => {
       console.error(error);
       setFeedbackType("error");
-      setFeedback("Erro ao excluir episode. Veja o console e a aba Network.");
+      setFeedback("Erro ao excluir episódio.");
     },
   });
 
@@ -241,13 +241,13 @@ export default function EpisodesPage() {
   }, [episodes, seasons, tvShows, search]);
 
   if (episodesQuery.isLoading || seasonsQuery.isLoading || tvShowsQuery.isLoading) {
-    return <div className="text-zinc-300">Carregando episodes...</div>;
+    return <div className="text-zinc-300">Carregando episódios...</div>;
   }
 
   if (episodesQuery.isError || seasonsQuery.isError || tvShowsQuery.isError) {
     return (
       <div className="text-red-400">
-        Erro ao carregar episodes, seasons ou tv shows. Verifique console e network.
+        Erro ao carregar episódios, temporadas ou séries.
       </div>
     );
   }
@@ -256,12 +256,12 @@ export default function EpisodesPage() {
     return (
       <div className="space-y-4">
         <PageHeader
-          title="Episodes"
-          description="Gerencie episódios vinculados às seasons cadastradas."
+          title="Episódios"
+          description="Gerencie episódios vinculados às temporadas cadastradas."
         />
         <EmptyState
-          title="Nenhuma season cadastrada"
-          description="Cadastre ao menos uma season antes de criar episódios."
+          title="Nenhuma temporada cadastrada"
+          description="Cadastre ao menos uma temporada antes de criar episódios."
         />
       </div>
     );
@@ -270,8 +270,8 @@ export default function EpisodesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Episodes"
-        description="Gerencie episódios vinculados às seasons cadastradas."
+        title="Episódios"
+        description="Gerencie episódios vinculados às temporadas cadastradas."
         action={
           <button
             onClick={() => {
@@ -289,7 +289,7 @@ export default function EpisodesPage() {
       {feedback ? <FeedbackAlert message={feedback} variant={feedbackType} /> : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <StatCard label="Total de Episodes" value={episodes.length} helperText="Quantidade total cadastrada." />
+        <StatCard label="Total de Episódios" value={episodes.length} helperText="Quantidade total cadastrada." />
         <StatCard label="Resultados filtrados" value={filteredEpisodes.length} helperText="Itens visíveis com base na busca." />
         <SearchCard
           value={search}

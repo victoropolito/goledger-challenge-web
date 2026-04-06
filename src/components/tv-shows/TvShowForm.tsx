@@ -22,9 +22,9 @@ export default function TvShowForm({
   onSubmit,
   onCancel,
   isSubmitting = false,
-  submitLabel = "Salvar TV Show",
-  title = "Criar TV Show",
-  descriptionText = "Preencha os campos obrigatórios do schema de tvShows.",
+  submitLabel = "Salvar Série",
+  title = "Criar Série",
+  descriptionText = "Preencha os campos abaixo.",
 }: TvShowFormProps) {
   const [form, setForm] = useState<CreateTvShowInput>(initialValues ?? initialState);
 
@@ -69,7 +69,7 @@ export default function TvShowForm({
             setForm((prev) => ({ ...prev, title: e.target.value }))
           }
           className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-zinc-500"
-          placeholder="Breaking Bad"
+          placeholder="Título da série"
           required
         />
       </div>
@@ -84,7 +84,7 @@ export default function TvShowForm({
             setForm((prev) => ({ ...prev, description: e.target.value }))
           }
           className="min-h-[120px] w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-zinc-500"
-          placeholder="Short summary of the TV show"
+          placeholder="Descrição da série"
           required
         />
       </div>

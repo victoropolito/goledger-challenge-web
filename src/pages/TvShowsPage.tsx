@@ -42,7 +42,7 @@ function TvShowCard({
 
           <div className="mt-4 space-y-1 text-xs text-zinc-500">
             <p>Key: {show["@key"] ?? "N/A"}</p>
-            <p>Última atualização: {formatDateTime(show["@lastUpdated"])}</p>
+            <p>Última atualização: {show["@lastUpdated"] ? new Date(show["@lastUpdated"]).toLocaleDateString('pt-BR') : "N/A"}</p>
           </div>
         </div>
       </div>
@@ -83,13 +83,13 @@ export default function TvShowsPage() {
     mutationFn: (values: CreateTvShowInput) => createTvShow(values),
     onSuccess: async () => {
       setFeedbackType("success");
-      setFeedback("TV Show criado com sucesso.");
+      setFeedback("Série criada com sucesso.");
       await queryClient.invalidateQueries({ queryKey: ["tv-shows"] });
     },
     onError: (error) => {
       console.error(error);
       setFeedbackType("error");
-      setFeedback("Erro ao criar TV Show. Veja o console e a aba Network.");
+      setFeedback("Erro ao criar série.");
     },
   });
 
@@ -103,14 +103,14 @@ export default function TvShowsPage() {
     }) => updateTvShow(key, values),
     onSuccess: async () => {
       setFeedbackType("success");
-      setFeedback("TV Show atualizado com sucesso.");
+      setFeedback("Série atualizada com sucesso.");
       setEditingShow(null);
       await queryClient.invalidateQueries({ queryKey: ["tv-shows"] });
     },
     onError: (error) => {
       console.error(error);
       setFeedbackType("error");
-      setFeedback("Erro ao atualizar TV Show. Veja o console e a aba Network.");
+      setFeedback("Erro ao atualizar série.");
     },
   });
 
@@ -118,7 +118,7 @@ export default function TvShowsPage() {
     mutationFn: (key: string) => deleteTvShow(key),
     onSuccess: async () => {
       setFeedbackType("success");
-      setFeedback("TV Show excluído com sucesso.");
+      setFeedback("Série excluída com sucesso.");
       if (editingShow) {
         setEditingShow(null);
       }
@@ -127,7 +127,7 @@ export default function TvShowsPage() {
     onError: (error) => {
       console.error(error);
       setFeedbackType("error");
-      setFeedback("Erro ao excluir TV Show. Veja o console e a aba Network.");
+      setFeedback("Erro ao excluir série.");
     },
   });
 
@@ -168,13 +168,13 @@ export default function TvShowsPage() {
   }
 
   if (tvShowsQuery.isLoading) {
-    return <div className="text-zinc-300">Carregando TV Shows...</div>;
+    return <div className="text-zinc-300">Carregando Séries...</div>;
   }
 
   if (tvShowsQuery.isError) {
     return (
       <div className="text-red-400">
-        Erro ao carregar TV Shows. Verifique o console e a aba Network.
+        Erro ao carregar Séries.
       </div>
     );
   }
@@ -196,8 +196,8 @@ export default function TvShowsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="TV Shows"
-        description="Gerencie o catálogo principal de séries da aplicação."
+        title="Séries"
+        description="Gerencie o catálogo principal de séries."
         action={
           <button
             onClick={() => tvShowsQuery.refetch()}
@@ -214,7 +214,7 @@ export default function TvShowsPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <StatCard
-          label="Total de TV Shows"
+          label="Total de Séries"
           value={items.length}
           helperText="Quantidade total cadastrada."
         />
@@ -253,8 +253,8 @@ export default function TvShowsPage() {
             </section>
           ) : (
             <EmptyState
-              title="Nenhum TV Show encontrado"
-              description="Ajuste a busca ou crie um novo TV Show no formulário ao lado."
+              title="Nenhuma série encontrada"
+              description="Ajuste a busca ou crie uma nova série no formulário."
             />
           )}
         </section>
@@ -272,7 +272,7 @@ export default function TvShowsPage() {
               isSubmitting={updateMutation.isPending}
               submitLabel="Salvar alterações"
               title={`Editar: ${editingShow.title}`}
-              descriptionText="Atualize os dados do TV Show selecionado."
+              descriptionText="Atualize os dados da série selecionada."
             />
           ) : (
             <TvShowForm

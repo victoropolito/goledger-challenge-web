@@ -75,7 +75,7 @@ function WatchlistCard({
 
         <div className="mt-4">
           <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">
-            TV Shows ({tvShowTitles.length})
+            Séries ({tvShowTitles.length})
           </p>
 
           {tvShowTitles.length > 0 ? (
@@ -90,13 +90,13 @@ function WatchlistCard({
               ))}
             </div>
           ) : (
-            <p className="text-sm text-zinc-500">Nenhum TV Show associado.</p>
+            <p className="text-sm text-zinc-500">Nenhuma série associada.</p>
           )}
         </div>
 
         <div className="mt-4 space-y-1 text-xs text-zinc-500">
           <p>Key: {watchlist["@key"] ?? "N/A"}</p>
-          <p>Última atualização: {formatDateTime(watchlist["@lastUpdated"])}</p>
+          <p>Última atualização: {watchlist["@lastUpdated"] ? new Date(watchlist["@lastUpdated"]).toLocaleDateString('pt-BR') : "N/A"}</p>
         </div>
       </div>
 
@@ -147,7 +147,7 @@ export default function WatchlistsPage() {
     onError: (error) => {
       console.error(error);
       setFeedbackType("error");
-      setFeedback("Erro ao criar watchlist. Veja o console e a aba Network.");
+      setFeedback("Erro ao criar watchlist.");
     },
   });
 
@@ -163,7 +163,7 @@ export default function WatchlistsPage() {
     onError: (error) => {
       console.error(error);
       setFeedbackType("error");
-      setFeedback("Erro ao atualizar watchlist. Veja o console e a aba Network.");
+      setFeedback("Erro ao atualizar watchlist.");
     },
   });
 
@@ -178,7 +178,7 @@ export default function WatchlistsPage() {
     onError: (error) => {
       console.error(error);
       setFeedbackType("error");
-      setFeedback("Erro ao excluir watchlist. Veja o console e a aba Network.");
+      setFeedback("Erro ao excluir watchlist.");
     },
   });
 
@@ -246,7 +246,7 @@ export default function WatchlistsPage() {
   if (watchlistsQuery.isError || tvShowsQuery.isError) {
     return (
       <div className="text-red-400">
-        Erro ao carregar watchlists ou tv shows. Verifique console e network.
+        Erro ao carregar watchlists ou séries.
       </div>
     );
   }

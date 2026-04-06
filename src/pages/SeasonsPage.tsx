@@ -30,7 +30,7 @@ function getTvShowLabel(value: Season["tvShow"], tvShows: TvShow[]): string {
     return String(value.title);
   }
 
-  return key || "TV Show não identificado";
+  return key || "Série não identificada";
 }
 
 function SeasonCard({
@@ -50,7 +50,7 @@ function SeasonCard({
     <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-sm">
       <div>
         <h3 className="text-lg font-semibold text-white">
-          {tvShowLabel} — Season {season.number}
+          {tvShowLabel} — Temporada {season.number}
         </h3>
 
         <div className="mt-3 flex flex-wrap gap-2">
@@ -61,7 +61,7 @@ function SeasonCard({
 
         <div className="mt-4 space-y-1 text-xs text-zinc-500">
           <p>Key: {season["@key"] ?? "N/A"}</p>
-          <p>Última atualização: {formatDateTime(season["@lastUpdated"])}</p>
+          <p>Última atualização: {season["@lastUpdated"] ? new Date(season["@lastUpdated"]).toLocaleDateString('pt-BR') : "N/A"}</p>
         </div>
       </div>
 
@@ -112,7 +112,7 @@ export default function SeasonsPage() {
     onError: (error) => {
       console.error(error);
       setFeedbackType("error");
-      setFeedback("Erro ao criar season. Veja o console e a aba Network.");
+      setFeedback("Erro ao criar season.");
     },
   });
 
@@ -128,7 +128,7 @@ export default function SeasonsPage() {
     onError: (error) => {
       console.error(error);
       setFeedbackType("error");
-      setFeedback("Erro ao atualizar season. Veja o console e a aba Network.");
+      setFeedback("Erro ao atualizar season.");
     },
   });
 
@@ -143,7 +143,7 @@ export default function SeasonsPage() {
     onError: (error) => {
       console.error(error);
       setFeedbackType("error");
-      setFeedback("Erro ao excluir season. Veja o console e a aba Network.");
+      setFeedback("Erro ao excluir season.");
     },
   });
 
@@ -211,13 +211,13 @@ export default function SeasonsPage() {
   }, [seasons, tvShows, search]);
 
   if (seasonsQuery.isLoading || tvShowsQuery.isLoading) {
-    return <div className="text-zinc-300">Carregando seasons...</div>;
+    return <div className="text-zinc-300">Carregando temporadas...</div>;
   }
 
   if (seasonsQuery.isError || tvShowsQuery.isError) {
     return (
       <div className="text-red-400">
-        Erro ao carregar seasons ou tv shows. Verifique console e network.
+        Erro ao carregar temporadas ou séries.
       </div>
     );
   }
@@ -225,8 +225,8 @@ export default function SeasonsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Seasons"
-        description="Gerencie temporadas vinculadas aos TV Shows já cadastrados."
+        title="Temporadas"
+        description="Gerencie temporadas vinculadas as séries já cadastrados."
         action={
           <button
             onClick={() => {
@@ -243,12 +243,12 @@ export default function SeasonsPage() {
       {feedback ? <FeedbackAlert message={feedback} variant={feedbackType} /> : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <StatCard label="Total de Seasons" value={seasons.length} helperText="Quantidade total cadastrada." />
+        <StatCard label="Total de Temporadas" value={seasons.length} helperText="Quantidade total cadastrada." />
         <StatCard label="Resultados filtrados" value={filteredSeasons.length} helperText="Itens visíveis com base na busca." />
         <SearchCard
           value={search}
           onChange={setSearch}
-          placeholder="Buscar por série, número ou ano"
+          placeholder="Buscar por série, nº temporada ou ano"
         />
       </div>
 
@@ -269,8 +269,8 @@ export default function SeasonsPage() {
             </section>
           ) : (
             <EmptyState
-              title="Nenhuma season encontrada"
-              description="Ajuste a busca ou crie uma nova season no formulário ao lado."
+              title="Nenhuma temporada encontrada"
+              description="Ajuste a busca ou crie uma nova tempoara no formulário."
             />
           )}
         </section>
@@ -288,8 +288,8 @@ export default function SeasonsPage() {
               onCancel={() => setEditingSeason(null)}
               isSubmitting={updateMutation.isPending}
               submitLabel="Salvar alterações"
-              title={`Editar Season ${editingSeason.number}`}
-              descriptionText="Como number e tvShow são chave, edite apenas o year."
+              title={`Editar Temporada - ${editingSeason.number} de ${getTvShowLabel(editingSeason.tvShow, tvShows)}`}
+              descriptionText="Edite o ano da temporada."
               disableKeyFields
             />
           ) : (

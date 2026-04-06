@@ -27,7 +27,7 @@ export default function WatchlistForm({
   isSubmitting = false,
   submitLabel = "Salvar Watchlist",
   title = "Criar Watchlist",
-  descriptionText = "Defina um título e selecione os TV Shows.",
+  descriptionText = "Defina um nome e selecione as séries.",
   disableTitle = false,
 }: WatchlistFormProps) {
   const [form, setForm] = useState<CreateWatchlistInput>(initialValues ?? initialState);
@@ -77,7 +77,7 @@ export default function WatchlistForm({
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-zinc-200">
-          Title
+          Nome
         </label>
         <input
           type="text"
@@ -93,7 +93,7 @@ export default function WatchlistForm({
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-zinc-200">
-          Description
+          Descrição
         </label>
         <textarea
           value={form.description ?? ""}
@@ -101,19 +101,19 @@ export default function WatchlistForm({
             setForm((prev) => ({ ...prev, description: e.target.value }))
           }
           className="min-h-[120px] w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-zinc-500"
-          placeholder="Optional description"
+          placeholder="Descrição opcional"
         />
       </div>
 
       <div className="space-y-3">
         <label className="block text-sm font-medium text-zinc-200">
-          TV Shows
+          Séries
         </label>
 
         <div className="max-h-80 space-y-3 overflow-auto rounded-xl border border-zinc-800 bg-zinc-950 p-4">
           {tvShows.length === 0 ? (
             <p className="text-sm text-zinc-400">
-              Nenhum TV Show disponível.
+              Nenhuma série disponível.
             </p>
           ) : (
             tvShows.map((show) => {
