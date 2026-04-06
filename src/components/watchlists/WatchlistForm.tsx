@@ -136,7 +136,6 @@ export default function WatchlistForm({
 
                   <div>
                     <p className="font-medium text-white">{show.title}</p>
-                    <p className="text-sm text-zinc-400">{show.description}</p>
                   </div>
                 </label>
               );
