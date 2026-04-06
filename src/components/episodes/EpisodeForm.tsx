@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { CreateEpisodeInput, Season } from "../../types/api";
 
 type EpisodeFormProps = {
@@ -36,7 +36,6 @@ export default function EpisodeForm({ seasons, getSeasonLabel, initialValues, on
       return;
     }
     
-    // Resetando para o estado inicial vazio
     setForm(initialState);
     setSearchTerm("");
   }, [initialValues, seasons, getSeasonLabel]);

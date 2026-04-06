@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { CreateSeasonInput, TvShow } from "../../types/api";
 
 type SeasonFormProps = {
@@ -22,7 +22,6 @@ export default function SeasonForm({ tvShows, initialValues, onSubmit, onCancel,
       return; 
     }
     
-    // Resetando para o estado inicial vazio
     setForm(initialState);
     setSearchTerm("");
   }, [initialValues, tvShows]);
@@ -53,7 +52,6 @@ export default function SeasonForm({ tvShows, initialValues, onSubmit, onCancel,
       </div>
 
       <div className="space-y-2 relative">
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">Série</label>
         <input 
           type="text" 
           value={searchTerm} 
