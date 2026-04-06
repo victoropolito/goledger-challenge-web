@@ -1,4 +1,3 @@
-```markdown
 # GoLedger Challenge Web - TV Shows Admin
 
 This is an administrative dashboard. The system allows complete management of a TV shows catalog, including seasons, episodes, and the creation of custom lists (Watchlists).
@@ -94,4 +93,3 @@ In the project directory, you can run:
 - `npm run build`: Builds the app for production to the `dist` folder.
 - `npm run lint`: Runs ESLint to find and fix problems in the code.
 - `npm run preview`: Locally previews the production build.
-```
