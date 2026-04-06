@@ -1,24 +1,13 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getAssetSchema, getAssetTypes } from "../api/schema";
-
-const mainAssetTags = ["tvShows", "seasons", "episodes", "watchlist"] as const;
-
-function JsonCard({
-  title,
-  data,
-}: {
-  title: string;
-  data: unknown;
-}) {
-  return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-      <h3 className="text-lg font-semibold mb-3">{title}</h3>
-      <pre className="overflow-auto rounded-xl bg-zinc-950 p-4 text-xs text-zinc-200">
-        {JSON.stringify(data, null, 2)}
-      </pre>
-    </section>
-  );
-}
+import { getAssetTypes } from "../api/schema";
+import { getEpisodesList } from "../api/episodes";
+import { getSeasonsList } from "../api/seasons";
+import { getTvShowsList } from "../api/tvShows";
+import { getWatchlistsList } from "../api/watchlists";
+import PageHeader from "../components/ui/PageHeader";
+import QuickLinkCard from "../components/ui/QuickLinkCard";
+import StatCard from "../components/ui/StatCard";
 
 export default function Dashboard() {
   const assetTypesQuery = useQuery({
@@ -26,91 +15,143 @@ export default function Dashboard() {
     queryFn: getAssetTypes,
   });
 
-  const tvShowsSchemaQuery = useQuery({
-    queryKey: ["asset-schema", "tvShows"],
-    queryFn: () => getAssetSchema("tvShows"),
+  const tvShowsQuery = useQuery({
+    queryKey: ["tv-shows"],
+    queryFn: getTvShowsList,
   });
 
-  const seasonsSchemaQuery = useQuery({
-    queryKey: ["asset-schema", "seasons"],
-    queryFn: () => getAssetSchema("seasons"),
+  const seasonsQuery = useQuery({
+    queryKey: ["seasons"],
+    queryFn: getSeasonsList,
   });
 
-  const episodesSchemaQuery = useQuery({
-    queryKey: ["asset-schema", "episodes"],
-    queryFn: () => getAssetSchema("episodes"),
+  const episodesQuery = useQuery({
+    queryKey: ["episodes"],
+    queryFn: getEpisodesList,
   });
 
-  const watchlistSchemaQuery = useQuery({
-    queryKey: ["asset-schema", "watchlist"],
-    queryFn: () => getAssetSchema("watchlist"),
+  const watchlistsQuery = useQuery({
+    queryKey: ["watchlists"],
+    queryFn: getWatchlistsList,
   });
 
   const isLoading =
     assetTypesQuery.isLoading ||
-    tvShowsSchemaQuery.isLoading ||
-    seasonsSchemaQuery.isLoading ||
-    episodesSchemaQuery.isLoading ||
-    watchlistSchemaQuery.isLoading;
+    tvShowsQuery.isLoading ||
+    seasonsQuery.isLoading ||
+    episodesQuery.isLoading ||
+    watchlistsQuery.isLoading;
 
   const isError =
     assetTypesQuery.isError ||
-    tvShowsSchemaQuery.isError ||
-    seasonsSchemaQuery.isError ||
-    episodesSchemaQuery.isError ||
-    watchlistSchemaQuery.isError;
+    tvShowsQuery.isError ||
+    seasonsQuery.isError ||
+    episodesQuery.isError ||
+    watchlistsQuery.isError;
+
+  const assetTypes = assetTypesQuery.data ?? [];
+  const tvShows = tvShowsQuery.data?.items ?? [];
+  const seasons = seasonsQuery.data?.items ?? [];
+  const episodes = episodesQuery.data?.items ?? [];
+  const watchlists = watchlistsQuery.data?.items ?? [];
+
+  const visibleAssetTypes = useMemo(() => {
+    return assetTypes.filter((item) =>
+      ["tvShows", "seasons", "episodes", "watchlist"].includes(item.tag)
+    );
+  }, [assetTypes]);
 
   if (isLoading) {
-    return <div className="text-zinc-300">Carregando schemas...</div>;
+    return <div className="text-zinc-300">Carregando dashboard...</div>;
   }
 
   if (isError) {
     return (
       <div className="text-red-400">
-        Erro ao carregar um ou mais schemas. Verifique o console/network.
+        Erro ao carregar o dashboard. Verifique o console e a aba Network.
       </div>
     );
   }
 
-  const assetTypes = assetTypesQuery.data ?? [];
-
   return (
-    <div className="space-y-8">
-      <header>
-        <h2 className="text-3xl font-bold">Dashboard</h2>
-        <p className="mt-2 text-zinc-400">
-          Exploração inicial da API e dos schemas principais.
-        </p>
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        title="Dashboard"
+        description="Visão geral do catálogo de séries, temporadas, episódios e watchlists."
+      />
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="TV Shows"
+          value={tvShows.length}
+          helperText="Séries cadastradas no catálogo."
+        />
+        <StatCard
+          label="Seasons"
+          value={seasons.length}
+          helperText="Temporadas vinculadas aos TV Shows."
+        />
+        <StatCard
+          label="Episodes"
+          value={episodes.length}
+          helperText="Episódios cadastrados por season."
+        />
+        <StatCard
+          label="Watchlists"
+          value={watchlists.length}
+          helperText="Listas personalizadas criadas."
+        />
+      </div>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <QuickLinkCard
+          to="/tv-shows"
+          title="Gerenciar TV Shows"
+          description="Criar, editar e excluir séries."
+        />
+        <QuickLinkCard
+          to="/seasons"
+          title="Gerenciar Seasons"
+          description="Criar e organizar temporadas por série."
+        />
+        <QuickLinkCard
+          to="/episodes"
+          title="Gerenciar Episodes"
+          description="Cadastrar episódios por temporada."
+        />
+        <QuickLinkCard
+          to="/watchlist"
+          title="Gerenciar Watchlists"
+          description="Montar listas de séries para assistir."
+        />
+      </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-        <h3 className="text-lg font-semibold mb-4">Asset types disponíveis</h3>
+        <h3 className="text-xl font-semibold text-white">Asset Types</h3>
+        <p className="mt-2 text-sm text-zinc-400">
+          Estruturas principais identificadas pela API.
+        </p>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {assetTypes.map((asset) => (
-            <div
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {visibleAssetTypes.map((asset) => (
+            <article
               key={asset.tag}
               className="rounded-xl border border-zinc-800 bg-zinc-950 p-4"
             >
               <div className="flex items-center justify-between gap-3">
-                <h4 className="font-semibold">{asset.label}</h4>
+                <h4 className="font-semibold text-white">{asset.label}</h4>
                 <span className="rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-300">
                   {asset.tag}
                 </span>
               </div>
 
-              <p className="mt-3 text-sm text-zinc-400">{asset.description}</p>
-            </div>
+              <p className="mt-3 text-sm text-zinc-400">
+                {asset.description}
+              </p>
+            </article>
           ))}
         </div>
       </section>
-
-      <div className="grid gap-6">
-        <JsonCard title="Schema: tvShows" data={tvShowsSchemaQuery.data} />
-        <JsonCard title="Schema: seasons" data={seasonsSchemaQuery.data} />
-        <JsonCard title="Schema: episodes" data={episodesSchemaQuery.data} />
-        <JsonCard title="Schema: watchlist" data={watchlistSchemaQuery.data} />
-      </div>
     </div>
   );
 }
